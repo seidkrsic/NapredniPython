@@ -12,11 +12,14 @@ FPS = 60
 
 
 x = 0 
-y = 0 
+y = 430 
 height = 60
 width = 40
 speed = 5 
 
+# promjenljive vezane za skok naseg lika 
+isJump = False  
+jumpCount = 10 
 
 
 while run: 
@@ -30,10 +33,26 @@ while run:
         x -= speed 
     if keys[pygame.K_RIGHT] and x < 500 - width - speed:
         x += speed 
-    if keys[pygame.K_UP] and y > speed:  
-        y -= speed 
-    if keys[pygame.K_DOWN] and y < 500 - height -speed:
-        y += speed 
+
+
+
+    if not isJump: 
+        if keys[pygame.K_SPACE]: 
+            isJump = True 
+
+    else: 
+            # ovdje se desava skok 
+            if jumpCount >= -10:
+                y -= (jumpCount * abs(jumpCount)) * 0.5 
+                jumpCount -= 1 
+                
+            else: 
+                # ovdje treba da ga zaustavimo da skace 
+                isJump = False 
+                jumpCount = 10 
+
+
+
 
     WIN.fill((0,0,0)) 
     pygame.draw.rect(WIN, (255, 0,0), (x,y, width, height)) 
