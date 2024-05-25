@@ -49,17 +49,51 @@ class Player:
                 WIN.blit(walkRight[0], (man.x,man.y)) 
 
 
+class Enemy: 
+    # ovdje dodajemo slike 
+    walkLeft = [pygame.image.load("L1E.png"),pygame.image.load("L2E.png"),pygame.image.load("L3E.png"),pygame.image.load("L4E.png"),pygame.image.load("L5E.png"),pygame.image.load("L6E.png"),pygame.image.load("L7E.png"),pygame.image.load("L8E.png"),pygame.image.load("L9E.png"),pygame.image.load("L10E.png"),pygame.image.load("L11E.png")]
+    walkRight = [pygame.image.load("R1E.png"),pygame.image.load("R2E.png"),pygame.image.load("R3E.png"),pygame.image.load("R4E.png"),pygame.image.load("R5E.png"),pygame.image.load("R6E.png"),pygame.image.load("R7E.png"),pygame.image.load("R8E.png"),pygame.image.load("R9E.png"), pygame.image.load("R10E.png"),pygame.image.load("R11E.png")]
+
+    def __init__(self, x, y, width, height, end): 
+        self.x = x 
+        self.y = y 
+        self.width = width 
+        self.height = height 
+        self.path = [x, end] 
+        self.walkCount = 0 
+        self.speed = 3 
+    
+    def draw(self, win): 
+        self.move() 
+
+        if self.walkCount + 1 > 32: 
+            self.walkCount = 0 
+        
+        if self.speed > 0:
+             # if we move right 
+            WIN.blit(self.walkRight[self.walkCount//3], (self.x, self.y)) 
+            self.walkCount += 1  
+        else: 
+            # if we move left 
+            WIN.blit(self.walkLeft[self.walkCount//3], (self.x, self.y)) 
+            self.walkCount += 1 
+
+    def move(self):
+        ... 
+
+
+
 class Projectile:
-    def __init__(self,x, y, radius, color, facing): 
+    def __init__(self, x, y, radius, color, facing): 
         self.x = x 
         self.y = y 
         self.radius = radius 
         self.color = color 
         self.facing = facing 
+        self.speed = 8 * facing 
     
     def draw(self, win): 
         pygame.draw.circle(win, self.color, (self.x, self.y), self.radius) 
-
 
 
 
@@ -67,6 +101,8 @@ def redrawGameWindow():
     # global walkCount 
     WIN.blit(bg, (0,0))
     man.draw(WIN)
+    for bullet in bullets:
+        bullet.draw(WIN) 
 
 
     pygame.display.update() 
@@ -75,15 +111,38 @@ def redrawGameWindow():
 
 man = Player(0, 400,40, 60) 
 
-
+bullets = [] # list of projectiles 
 
 while run: 
     clock.tick(FPS)
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT: 
             run = False 
+    
+    for bullet in bullets: 
+        if bullet.x < 500 and bullet.x > 0: 
+            # here we move projectile left or right 
+            bullet.x += bullet.speed 
+        else: 
+            # here we delete projectile
+            bullets.pop(bullets.index(bullet)) 
+
+
+
 
     keys = pygame.key.get_pressed() 
+
+    # here we create bullets 
+    if keys[pygame.K_SPACE]: 
+        if man.right: 
+            facing = 1 
+        else: 
+            facing = -1 
+
+        if len(bullets) < 6:
+            bullets.append(Projectile(round(man.x+man.width//2),round(man.y+man.height//2), 6, (0,0,0), facing))   
+
+
     if keys[pygame.K_LEFT] and man.x > man.speed - man.width//2:
         man.x -= man.speed 
         # ovo smo dodali zbog slika 
