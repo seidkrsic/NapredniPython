@@ -16,39 +16,64 @@ walkRight = [pygame.image.load("R1.png"),pygame.image.load("R2.png"),pygame.imag
 bg = pygame.image.load("bg.jpg") 
 char = pygame.image.load("standing.png") 
 
-x = 0 
-y = 400 
-height = 60
-width = 40
-speed = 5 
 
-# promjenljive vezane za skok naseg lika 
-isJump = False  
-jumpCount = 10 
+class Player: 
+    def __init__(self, x, y,width, height):
+        self.x = x 
+        self.y = y 
+        self.width = width 
+        self.height = height 
+        self.speed = 5
+        self.isJump = False 
+        self.jumpCount = 10 
+        self.left = False 
+        self.right = True  
+        self.walkCount = 0 
+        self.standing = True 
 
-left = False 
-right = False 
-walkCount = 0 
+    def draw(self, win): 
+        if man.walkCount > 26: 
+            man.walkCount = 0
+
+
+        if man.left: 
+            WIN.blit(walkLeft[man.walkCount//3],(man.x,man.y))
+            man.walkCount +=1 
+        elif man.right: 
+            WIN.blit(walkRight[man.walkCount//3], (man.x,man.y)) 
+            man.walkCount +=1 
+        else: 
+            if self.left: 
+                WIN.blit(walkLeft[0], (man.x,man.y)) 
+            else: 
+                WIN.blit(walkRight[0], (man.x,man.y)) 
+
+
+class Projectile:
+    def __init__(self,x, y, radius, color, facing): 
+        self.x = x 
+        self.y = y 
+        self.radius = radius 
+        self.color = color 
+        self.facing = facing 
+    
+    def draw(self, win): 
+        pygame.draw.circle(win, self.color, (self.x, self.y), self.radius) 
+
+
 
 
 def redrawGameWindow():
-    global walkCount 
+    # global walkCount 
     WIN.blit(bg, (0,0))
-    if walkCount > 26: 
-        walkCount = 0
+    man.draw(WIN)
 
-    if left: 
-        WIN.blit(walkLeft[walkCount//3],(x,y))
-        walkCount +=1 
-    elif right: 
-        WIN.blit(walkRight[walkCount//3], (x,y)) 
-        walkCount +=1 
-    else: 
-        WIN.blit(char, (x,y)) 
 
     pygame.display.update() 
 
 
+
+man = Player(0, 400,40, 60) 
 
 
 
@@ -59,42 +84,41 @@ while run:
             run = False 
 
     keys = pygame.key.get_pressed() 
-    if keys[pygame.K_LEFT] and x > speed:
-        x -= speed 
+    if keys[pygame.K_LEFT] and man.x > man.speed - man.width//2:
+        man.x -= man.speed 
         # ovo smo dodali zbog slika 
-        left = True 
-        right = False 
-    elif keys[pygame.K_RIGHT] and x < 500 - width - speed:
-        x += speed 
+        man.left = True 
+        man.right = False 
+        man.standing = False 
+    elif keys[pygame.K_RIGHT] and man.x < 500 - man.width - man.speed:
+        man.x += man.speed 
         # ovo smo dodali zbog slika 
-        right = True 
-        left = False  
+        man.right = True 
+        man.left = False  
+        man.standing = False 
     else: 
         # ovo smo dodali zbog slika 
-        left = False 
-        right = False 
-        walkCount = 0 
+        man.standing = True 
+        man.walkCount = 0 
 
 
 
-    if not isJump: 
-        if keys[pygame.K_SPACE]: 
-            isJump = True
+    if not man.isJump: 
+        if keys[pygame.K_UP]: 
+            man.isJump = True
             # ovo smo dodali zbog slika  
-            left = False 
-            right = False 
-            walkCount = 0 
+            man.walkCount = 0 
 
     else: 
             # ovdje se desava skok 
-            if jumpCount >= -10:
-                y -= (jumpCount * abs(jumpCount)) * 0.5 
-                jumpCount -= 1 
+            if man.jumpCount >= -10:
+                man.y -= (man.jumpCount * abs(man.jumpCount)) * 0.5 
+                man.jumpCount -= 1 
                 
             else: 
                 # ovdje treba da ga zaustavimo da skace 
-                isJump = False 
-                jumpCount = 10 
+                man.isJump = False 
+                man.jumpCount = 10 
 
 
 
