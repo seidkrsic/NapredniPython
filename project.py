@@ -17,6 +17,7 @@ bg = pygame.image.load("bg.jpg")
 char = pygame.image.load("standing.png") 
 
 
+
 class Player: 
     def __init__(self, x, y,width, height):
         self.x = x 
@@ -26,10 +27,11 @@ class Player:
         self.speed = 5
         self.isJump = False 
         self.jumpCount = 10 
-        self.left = False 
-        self.right = True  
+        self.left = True 
+        self.right = False   
         self.walkCount = 0 
         self.standing = True 
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
 
     def draw(self, win): 
         if man.walkCount > 26: 
@@ -47,7 +49,9 @@ class Player:
                 WIN.blit(walkLeft[0], (man.x,man.y)) 
             else: 
                 WIN.blit(walkRight[0], (man.x,man.y)) 
-
+        
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2) 
 
 class Enemy: 
     # ovdje dodajemo slike 
@@ -59,9 +63,11 @@ class Enemy:
         self.y = y 
         self.width = width 
         self.height = height 
+        self.end = end 
         self.path = [x, end] 
         self.walkCount = 0 
-        self.speed = 3 
+        self.speed = 2
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57) 
     
     def draw(self, win): 
         self.move() 
@@ -78,10 +84,29 @@ class Enemy:
             WIN.blit(self.walkLeft[self.walkCount//3], (self.x, self.y)) 
             self.walkCount += 1 
 
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2) 
+
+
     def move(self):
-        ... 
+        if self.speed > 0: # this is when we move right 
+            if self.x + self.speed < self.path[1]: 
+                self.x += self.speed 
+            else: # we change direction 
+                self.speed = self.speed * (-1) 
+                self.x += self.speed 
+                self.walkCount = 0 
 
+        else: # this is when we move left 
+            if self.x + self.speed > self.path[0]: 
+                self.x += self.speed 
+            else: 
+                self.speed = self.speed * (-1) 
+                self.x += self.speed 
+                self.walkCount = 0 
 
+    def hit(self):
+        print("Hit")  
 
 class Projectile:
     def __init__(self, x, y, radius, color, facing): 
@@ -101,6 +126,7 @@ def redrawGameWindow():
     # global walkCount 
     WIN.blit(bg, (0,0))
     man.draw(WIN)
+    goblin.draw(WIN) 
     for bullet in bullets:
         bullet.draw(WIN) 
 
@@ -109,8 +135,9 @@ def redrawGameWindow():
 
 
 
-man = Player(0, 400,40, 60) 
-
+man = Player(450, 400,40, 60) 
+goblin = Enemy(2, 400, 64, 64, 450) 
+shootLoop = 0 
 bullets = [] # list of projectiles 
 
 while run: 
@@ -120,6 +147,13 @@ while run:
             run = False 
     
     for bullet in bullets: 
+
+        if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
+            if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
+                goblin.hit() 
+                bullets.pop(bullets.index(bullet)) 
+
+
         if bullet.x < 500 and bullet.x > 0: 
             # here we move projectile left or right 
             bullet.x += bullet.speed 
@@ -128,12 +162,16 @@ while run:
             bullets.pop(bullets.index(bullet)) 
 
 
-
-
     keys = pygame.key.get_pressed() 
 
+    if shootLoop > 0: 
+        shootLoop += 1 
+    
+    if shootLoop > 15: 
+        shootLoop = 0 
+
     # here we create bullets 
-    if keys[pygame.K_SPACE]: 
+    if keys[pygame.K_SPACE] and shootLoop == 0: 
         if man.right: 
             facing = 1 
         else: 
@@ -141,6 +179,8 @@ while run:
 
         if len(bullets) < 6:
             bullets.append(Projectile(round(man.x+man.width//2),round(man.y+man.height//2), 6, (0,0,0), facing))   
+
+        shootLoop = 1 
 
 
     if keys[pygame.K_LEFT] and man.x > man.speed - man.width//2:
