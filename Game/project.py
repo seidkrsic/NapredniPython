@@ -8,7 +8,7 @@ pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
 run = True 
-FPS = 60 
+FPS = 50 
 score = 0 
 
 # ovdje dodajemo slike 
@@ -17,10 +17,9 @@ walkRight = [pygame.image.load("R1.png"),pygame.image.load("R2.png"),pygame.imag
 bg = pygame.image.load("bg.jpg") 
 char = pygame.image.load("standing.png") 
 font = pygame.font.SysFont("comicsans", 20, True) 
-music = pygame.mixer.music.load("music.mp3")
-
-hitSound = pygame.mixer.Sound("hit.mp3") 
-bulletSound = pygame.mixer.Sound("bullet.mp3") 
+music = pygame.mixer.music.load("music.mp3") 
+hitSound = pygame.mixer.Sound("hitSound.mp3") 
+bulletSound = pygame.mixer.Sound("bulletSound.wav") 
 
 pygame.mixer.music.play(-1)  
 
@@ -40,12 +39,35 @@ class Player:
         self.walkCount = 0 
         self.standing = True 
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+        self.on_platform = False 
+        self.left_can_go = True 
+
+    def hit(self): 
+        self.isJump = False 
+        self.jumpCount = 10 
+        self.x = 300 
+        self.y = 400 
+        self.left = True 
+        self.right = False 
+        self.walkCount = 0 
+        font1 = pygame.font.SysFont("comicsans", 70) 
+        text = font1.render("-5", 1, (255, 0,0))
+        WIN.blit(text, (250 - (text.get_width()/2), 250)) 
+        pygame.display.update()  
+        i=0 
+        while i< 100: 
+            pygame.time.delay(10) 
+            i += 1
+            for event in pygame.event.get(): 
+                if event.type == pygame.QUIT: 
+                    i = 101 
+                    pygame.quit()    
+
+
 
     def draw(self, win): 
         if man.walkCount > 26: 
             man.walkCount = 0
-
-
         if man.left: 
             WIN.blit(walkLeft[man.walkCount//3],(man.x,man.y))
             man.walkCount +=1 
@@ -59,7 +81,10 @@ class Player:
                 WIN.blit(walkRight[0], (man.x,man.y)) 
         
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2) 
+        # pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2) 
+    
+
+
 
 class Enemy: 
     # ovdje dodajemo slike 
@@ -126,6 +151,8 @@ class Enemy:
         else: 
             self.visible = False 
 
+
+
 class Projectile:
     def __init__(self, x, y, radius, color, facing): 
         self.x = x 
@@ -141,7 +168,6 @@ class Projectile:
 
 
 def redrawGameWindow():
-    # global walkCount 
     WIN.blit(bg, (0,0))
     man.draw(WIN)
     goblin.draw(WIN) 
@@ -156,24 +182,31 @@ def redrawGameWindow():
 
 
 man = Player(450, 400,40, 60) 
-goblin = Enemy(2, 400, 64, 64, 450) 
+goblin = Enemy(22, 400, 64, 64, 450) 
 shootLoop = 0 
 bullets = [] # list of projectiles 
-
+i = 0 
 while run: 
     clock.tick(FPS)
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT: 
             run = False 
+
+    if goblin.visible:
+        if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]: 
+            if man.hitbox[0] + goblin.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]:
+                man.hit() 
+                score -= 5 
+
     
     for bullet in bullets: 
 
-        if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
-            if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
-                goblin.hit() 
-                score += 1 
-                bullets.pop(bullets.index(bullet)) 
-
+        if goblin.visible:
+            if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
+                if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
+                    goblin.hit() 
+                    score += 1 
+                    bullets.pop(bullets.index(bullet)) 
 
         if bullet.x < 500 and bullet.x > 0: 
             # here we move projectile left or right 
@@ -205,24 +238,24 @@ while run:
         shootLoop = 1 
 
 
-    if keys[pygame.K_LEFT] and man.x > man.speed - man.width//2:
+    if keys[pygame.K_LEFT] and man.x - man.speed + man.width/2 > 0: 
         man.x -= man.speed 
         # ovo smo dodali zbog slika 
         man.left = True 
         man.right = False 
         man.standing = False 
+
+            
     elif keys[pygame.K_RIGHT] and man.x < 500 - man.width - man.speed:
         man.x += man.speed 
         # ovo smo dodali zbog slika 
         man.right = True 
         man.left = False  
         man.standing = False 
-    else: 
-        # ovo smo dodali zbog slika 
-        man.standing = True 
-        man.walkCount = 0 
-
-
+    else:
+        man.standing = True
+        man.walkCount = 0
+    
 
     if not man.isJump: 
         if keys[pygame.K_UP]: 
@@ -231,15 +264,17 @@ while run:
             man.walkCount = 0 
 
     else: 
-            # ovdje se desava skok 
-            if man.jumpCount >= -10:
+
+    # u procesu skoka
+        if man.jumpCount >= -10:
                 man.y -= (man.jumpCount * abs(man.jumpCount)) * 0.5 
                 man.jumpCount -= 1 
-                
-            else: 
-                # ovdje treba da ga zaustavimo da skace 
-                man.isJump = False 
-                man.jumpCount = 10 
+            
+        else: 
+            # ovdje treba da ga zaustavimo da skace 
+            man.isJump = False 
+            man.jumpCount = 10 
+
 
 
 
